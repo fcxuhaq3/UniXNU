@@ -246,6 +246,7 @@ jobs:
         with:
           name: unixnu-${{ steps.check.outputs.board }}-images-${{ github.run_attempt }}
           path: |
+            out/${{ steps.check.outputs.board }}/kernel/**
             out/${{ steps.check.outputs.board }}/payload/**
             out/${{ steps.check.outputs.board }}/boot/**
             out/${{ steps.check.outputs.board }}/tree/build/xnu/ios-obj/**/mach.*
