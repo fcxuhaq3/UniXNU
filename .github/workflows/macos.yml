@@ -23,6 +23,8 @@ on:
           - kernel payload
           - kernel userdata
           - kernel userdata payload
+          - kernel prelink payload
+          - kernel prelink userdata payload
         default: kernel
       xcode:
         description: Xcode version of the macos-26 image (/Applications/Xcode_<version>.app)
