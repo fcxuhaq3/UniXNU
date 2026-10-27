@@ -260,6 +260,15 @@ jobs:
           if [ "$SKIP_SETUP" = true ]; then args+=(--skip-setup); fi
           ./unixnu build payload "${args[@]}"
 
+      - name: Compress the payload
+        if: always()
+        run: |
+          B="${{ steps.check.outputs.board }}"
+          if [ -f "out/$B/payload/payload.img" ]; then
+            gzip -9 -c "out/$B/payload/payload.img" > "out/$B/payload/payload.img.gz"
+            ls -l "out/$B/payload/payload.img.gz"
+          fi
+
       - name: Upload the kernel artifacts
         if: always() && steps.kernel.outcome == 'success'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -267,11 +276,8 @@ jobs:
           name: unixnu-${{ steps.check.outputs.board }}-images-${{ github.run_attempt }}
           compression-level: 0
           path: |
-            out/${{ steps.check.outputs.board }}/kernel/**
-            out/${{ steps.check.outputs.board }}/payload/**
-            out/${{ steps.check.outputs.board }}/boot/**
-            out/${{ steps.check.outputs.board }}/userdata/**
-            out/${{ steps.check.outputs.board }}/tree/build/xnu/ios-obj/**/mach.*
+            out/${{ steps.check.outputs.board }}/kernel/kernel.macho.json
+            out/${{ steps.check.outputs.board }}/payload/payload.img.gz
             out/${{ steps.check.outputs.board }}/*.toml
             out/${{ steps.check.outputs.board }}/logs/*.log
           if-no-files-found: warn
