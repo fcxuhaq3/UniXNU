@@ -222,6 +222,24 @@ jobs:
           ./unixnu build userdata
           df -h "$GITHUB_WORKSPACE"
 
+      - name: Kernel diagnostics
+        if: always()
+        run: |
+          B="${{ steps.check.outputs.board }}"
+          echo "=== out/$B/kernel ==="
+          ls -l "out/$B/kernel" || true
+          echo "=== prelink report ==="
+          head -c 4000 "out/$B/kernel/kernel.macho.json" 2>/dev/null || echo "(no json)"
+          echo
+          echo "=== kext symbol counts in the built kernel ==="
+          K="out/$B/kernel/kernel.macho"
+          if [ -f "$K" ]; then
+            for s in IOStorageFamily IOBlockStorageDevice IOMedia IOPartitionScheme AppleAPFSContainer; do
+              printf '  %-26s %s\n' "$s" "$(strings -a "$K" | grep -c "$s" || true)"
+            done
+            echo "  size: $(stat -c %s "$K" 2>/dev/null || stat -f %z "$K")"
+          fi
+
       - name: Build payload
         id: payload
         if: contains(inputs.steps, 'payload')
