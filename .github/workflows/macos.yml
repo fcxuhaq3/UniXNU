@@ -213,6 +213,10 @@ jobs:
         # exist after a pass that does not link the device archives. So build the
         # archive-less bootstrap kernel first, keep its prelink output under
         # build/native-prelink, then rebuild with the real defconfig.
+        env:
+          # prepare-xnu-source.py lists Apple sources through the GitHub API; anonymous
+          # calls from hosted runners hit the shared rate limit (HTTP 403).
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -e
           B="${{ steps.check.outputs.board }}"
