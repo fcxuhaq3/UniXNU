@@ -207,6 +207,33 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: bash -euo pipefail -c "$PRE_BUILD"
 
+      - name: Bootstrap kernel and prelinked candidate
+        # build-ufs-original-bindings.py reads the original IOBlockStorageDevice
+        # vtable/methods from a prelinked candidate, and that candidate can only
+        # exist after a pass that does not link the device archives. So build the
+        # archive-less bootstrap kernel first, keep its prelink output under
+        # build/native-prelink, then rebuild with the real defconfig.
+        run: |
+          set -e
+          B="${{ steps.check.outputs.board }}"
+          if ! grep -q 'build-ufs-original-bindings.py' device/board.toml; then
+            echo "no original-bindings archive in board.toml; skipping the bootstrap pass"
+            exit 0
+          fi
+          ./unixnu defconfig bootstrap_defconfig
+          ./unixnu build kernel prelink || ./unixnu build kernel
+          ls -l "out/$B/kernel" || true
+          mkdir -p "out/$B/tree/build/native-prelink"
+          for name in native-owner-mobile-graphics-candidate native-owner-ufs-cpu-desktop-v9-hid-init-candidate; do
+            cp "out/$B/kernel/kernel.macho" "out/$B/tree/build/native-prelink/$name.macho"
+            if [ -f "out/$B/kernel/kernel.json" ]; then
+              cp "out/$B/kernel/kernel.json" "out/$B/tree/build/native-prelink/$name.json"
+            fi
+          done
+          ls -l "out/$B/tree/build/native-prelink/"
+          rm -f "out/$B/kernel/kernel.macho" "out/$B/kernel/kernel.json"
+          ./unixnu defconfig "$DEFCONFIG"
+
       - name: Build kernel
         id: kernel
         env:
