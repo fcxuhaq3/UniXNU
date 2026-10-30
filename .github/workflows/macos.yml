@@ -258,14 +258,14 @@ jobs:
         run: |
           OUT="out/${{ steps.check.outputs.board }}/symbols"
           mkdir -p "$OUT"
-          for f in "$DEVICE_DIR/tree/build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837.unstripped.noctf" \
-                   "$DEVICE_DIR/tree/build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837"; do
-            if [ -f "$f" ]; then
-              b=$(basename "$f")
-              echo "== $b =="
-              ( xcrun llvm-nm -n -a "$f" > "$OUT/$b.syms" ) || echo "  nm failed"
-              echo "  $(wc -l < "$OUT/$b.syms" 2>/dev/null | tr -d ' ') symbols"
-            fi
+          echo "workspace: $(pwd)"
+          echo "--- candidate kernels ---"
+          find . -maxdepth 10 -name 'mach.development.bcm2837*' -type f 2>/dev/null | head -10
+          for f in $(find . -maxdepth 10 -name 'mach.development.bcm2837*' -type f 2>/dev/null | head -4); do
+            b=$(basename "$f")
+            echo "== $b ($(stat -f%z "$f" 2>/dev/null || echo 0) bytes) =="
+            ( xcrun llvm-nm -n -a "$f" > "$OUT/$b.syms" ) && \
+              echo "   $(wc -l < "$OUT/$b.syms" | tr -d ' ') symbols" || echo "   nm failed"
           done
           ls -la "$OUT" || true
 
