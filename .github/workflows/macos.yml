@@ -253,6 +253,26 @@ jobs:
           ./unixnu build userdata
           df -h "$GITHUB_WORKSPACE"
 
+      - name: Kernel symbols
+        if: ${{ always() && steps.kernel.outcome == 'success' }}
+        run: |
+          set -euo pipefail
+          U="$DEVICE_DIR/tree/build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837.unstripped.noctf"
+          K="$DEVICE_DIR/tree/build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837"
+          mkdir -p "$DEVICE_DIR/tree/out/symbols"
+          OUT="$DEVICE_DIR/tree/out/symbols"
+          for f in "$U" "$K"; do
+            if [ -f "$f" ]; then
+              b=$(basename "$f")
+              echo "== $b =="
+              cp "$f" "$OUT/$b" || true
+              xcrun llvm-nm -n -a "$f" > "$OUT/$b.syms" 2>/dev/null || true
+              echo "  syms: $(wc -l < "$OUT/$b.syms" 2>/dev/null || echo 0) lines"
+              strings -a "$f" | grep -c 'panic screen' || true
+            fi
+          done
+          ls -la "$OUT"
+
       - name: Kernel diagnostics
         if: always()
         run: |
