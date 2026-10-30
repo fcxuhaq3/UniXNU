@@ -258,14 +258,13 @@ jobs:
         run: |
           OUT="out/${{ steps.check.outputs.board }}/symbols"
           mkdir -p "$OUT"
-          echo "workspace: $(pwd)"
-          echo "--- candidate kernels ---"
-          find . -maxdepth 10 -name 'mach.development.bcm2837*' -type f 2>/dev/null | head -10
-          for f in $(find . -maxdepth 10 -name 'mach.development.bcm2837*' -type f 2>/dev/null | head -4); do
-            b=$(basename "$f")
-            echo "== $b ($(stat -f%z "$f" 2>/dev/null || echo 0) bytes) =="
-            ( xcrun llvm-nm -n -a "$f" > "$OUT/$b.syms" ) && \
-              echo "   $(wc -l < "$OUT/$b.syms" | tr -d ' ') symbols" || echo "   nm failed"
+          for f in $(find . -maxdepth 10 -name 'mach.development.bcm2837.unstripped.noctf' -type f 2>/dev/null | head -1); do
+            echo "== $f =="
+            cp "$f" "$OUT/" && echo "   copied $(stat -f%z "$OUT/$(basename "$f")") bytes"
+            ( xcrun llvm-objdump --macho --syms "$f" > "$OUT/kernel.syms.txt" ) && \
+              echo "   objdump syms: $(wc -l < "$OUT/kernel.syms.txt" | tr -d ' ') lines" || echo "   objdump failed"
+            ( xcrun llvm-nm --format=posix -n "$f" > "$OUT/kernel.posix.txt" ) || true
+            head -3 "$OUT/kernel.syms.txt" 2>/dev/null || true
           done
           ls -la "$OUT" || true
 
