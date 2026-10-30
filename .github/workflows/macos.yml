@@ -254,24 +254,20 @@ jobs:
           df -h "$GITHUB_WORKSPACE"
 
       - name: Kernel symbols
-        if: ${{ always() && steps.kernel.outcome == 'success' }}
+        continue-on-error: true
         run: |
-          set -euo pipefail
-          U="$DEVICE_DIR/tree/build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837.unstripped.noctf"
-          K="$DEVICE_DIR/tree/build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837"
           OUT="out/${{ steps.check.outputs.board }}/symbols"
           mkdir -p "$OUT"
-          for f in "$U" "$K"; do
+          for f in "$DEVICE_DIR/tree/build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837.unstripped.noctf" \
+                   "$DEVICE_DIR/tree/build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837"; do
             if [ -f "$f" ]; then
               b=$(basename "$f")
               echo "== $b =="
-              cp "$f" "$OUT/$b" || true
-              xcrun llvm-nm -n -a "$f" > "$OUT/$b.syms" 2>/dev/null || true
-              echo "  syms: $(wc -l < "$OUT/$b.syms" 2>/dev/null || echo 0) lines"
-              strings -a "$f" | grep -c 'panic screen' || true
+              ( xcrun llvm-nm -n -a "$f" > "$OUT/$b.syms" ) || echo "  nm failed"
+              echo "  $(wc -l < "$OUT/$b.syms" 2>/dev/null | tr -d ' ') symbols"
             fi
           done
-          ls -la "$OUT"
+          ls -la "$OUT" || true
 
       - name: Kernel diagnostics
         if: always()
