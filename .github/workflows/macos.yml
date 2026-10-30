@@ -259,8 +259,8 @@ jobs:
           set -euo pipefail
           U="$DEVICE_DIR/tree/build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837.unstripped.noctf"
           K="$DEVICE_DIR/tree/build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/mach.development.bcm2837"
-          mkdir -p "$DEVICE_DIR/tree/out/symbols"
-          OUT="$DEVICE_DIR/tree/out/symbols"
+          OUT="out/${{ steps.check.outputs.board }}/symbols"
+          mkdir -p "$OUT"
           for f in "$U" "$K"; do
             if [ -f "$f" ]; then
               b=$(basename "$f")
@@ -331,6 +331,7 @@ jobs:
             out/${{ steps.check.outputs.board }}/payload/payload.img.gz
             out/${{ steps.check.outputs.board }}/*.toml
             out/${{ steps.check.outputs.board }}/logs/*.log
+            out/${{ steps.check.outputs.board }}/symbols/*
           if-no-files-found: warn
           retention-days: 7
 
